@@ -1,0 +1,48 @@
+preprocess:
+  cmd: python -m spacy run preprocess
+  script:
+    - python scripts/preprocess.py assets/train.pickle corpus/train.spacy
+    - python scripts/preprocess.py assets/val.pickle corpus/val.spacy
+  deps:
+    - path: assets/train.pickle
+      md5: 7d6de00c57057e0ddf87ffe764a5fe18
+    - path: assets/val.pickle
+      md5: b7f30e83df0c97098e68684ea7b0719d
+    - path: scripts/preprocess.py
+      md5: 6a32cbb3e93b11c7376ae0944609e14b
+  outs:
+    - path: corpus/train.spacy
+      md5: 7c3413283f55aea26c254b26ff4992b2
+    - path: corpus/val.spacy
+      md5: 76a6048f99fce61ebfc8b418123bbd89
+  spacy_version: 3.2.0
+  spacy_git_version: 0fc3dee77
+train:
+  cmd: python -m spacy run train
+  script:
+    - python -m spacy train configs/config.cfg --output training/ --paths.train corpus/train.spacy
+      --paths.dev corpus/val.spacy
+  deps:
+    - path: corpus/train.spacy
+      md5: 7c3413283f55aea26c254b26ff4992b2
+    - path: corpus/val.spacy
+      md5: 76a6048f99fce61ebfc8b418123bbd89
+  outs:
+    - path: training/model-best
+      md5: 247ed96dd14289f28f7c5bb134742a9c
+  spacy_version: 3.2.0
+  spacy_git_version: 0fc3dee77
+evaluate:
+  cmd: python -m spacy run evaluate
+  script:
+    - python -m spacy evaluate training/model-best corpus/val.spacy --output training/metrics.json
+  deps:
+    - path: corpus/val.spacy
+      md5: 76a6048f99fce61ebfc8b418123bbd89
+    - path: training/model-best
+      md5: 247ed96dd14289f28f7c5bb134742a9c
+  outs:
+    - path: training/metrics.json
+      md5: 92ce828920714c70625ce5aa35dc14d4
+  spacy_version: 3.2.0
+  spacy_git_version: 0fc3dee77

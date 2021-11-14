@@ -1,0 +1,58 @@
+title: "Named Entity Recognition"
+
+# Variables can be referenced across the project.yml using ${vars.var_name}
+vars:
+  config: "config.cfg"
+  name: "ner"
+  version: "0.0.0"
+  train: "train"
+  dev: "val"
+
+directories: ["assets", "configs", "scripts", "corpus"]
+
+
+assets:
+  - dest: "assets/${vars.train}.pickle"
+  - dest: "assets/${vars.dev}.pickle"
+
+
+workflows:
+  all:
+    - preprocess
+    - train
+    - evaluate
+
+
+commands:
+  - name: "preprocess"
+    help: "Convert the data to spaCy's binary format"
+    script:
+      - "python scripts/preprocess.py assets/${vars.train}.pickle corpus/${vars.train}.spacy"
+      - "python scripts/preprocess.py assets/${vars.dev}.pickle corpus/${vars.dev}.spacy"
+    deps:
+      - "assets/${vars.train}.pickle"
+      - "assets/${vars.dev}.pickle"
+      - "scripts/preprocess.py"
+    outputs:
+      - "corpus/${vars.train}.spacy"
+      - "corpus/${vars.dev}.spacy"
+
+  - name: "train"
+    help: "Train a named entity recognition model"
+    script:
+      - "python -m spacy train configs/${vars.config} --output training/ --paths.train corpus/${vars.train}.spacy --paths.dev corpus/${vars.dev}.spacy"
+    deps:
+      - "corpus/${vars.train}.spacy"
+      - "corpus/${vars.dev}.spacy"
+    outputs:
+      - "training/model-best"
+
+  - name: "evaluate"
+    help: "Evaluate the model and export metrics"
+    script:
+      - "python -m spacy evaluate training/model-best corpus/${vars.dev}.spacy --output training/metrics.json"
+    deps:
+      - "corpus/${vars.dev}.spacy"
+      - "training/model-best"
+    outputs:
+      - "training/metrics.json"
